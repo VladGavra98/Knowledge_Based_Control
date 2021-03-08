@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Mar  7 21:42:18 2021
+
+@author: vladg
+"""
 from support_fns import seed_experiment
 import tensorflow as tf
 import tensorflow_addons as tfa
@@ -16,10 +22,9 @@ import tqdm
 
 
 # SEED EXPERIMENT TO CREATE REPRODUCIBLE RESULTS
-"""TASK 1.4: PSEUDO-RANDOM GENERATOR"""
 seed_value = 1
 seed_experiment(seed=seed_value)  # Comment this line to disable the seeding
-"""TASK 1.4: END"""
+
 
 
 ### SETUP (untouched)
@@ -28,25 +33,38 @@ gpus = tf.config.experimental.list_physical_devices('GPU')
 if len(gpus) > 0:
     tf.config.experimental.set_memory_growth(gpus[0], True)
     print("CUDA is active")
+else:
+    print("Sad CPU")
 
-# LOAD DATASET
+# LOAD
 with h5py.File('./dataset.h5', 'r') as hf:
     observation = hf['observation.h5'][:]
     state = hf['state.h5'][:]
 print('Loaded observation data: %s' % str(observation.shape))
 print('Loaded state data: %s' % str(state.shape))
 
-# DATASET PARAMETERS
-num_examples = 12000
 
 #testing ....
+N = 120    # transitions
+T = 101    # time steps per transition
 
-observation = observation[:num_examples]
-state = state[:num_examples]
+# DATASET PARAMETERS
+num_examples = N * T #12000
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                       # DATA PRE-PRO
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+observation = observation.reshape(N,T,28,28,3)   # N x T x 28 x 28 x3
+observation = observation[:num_examples]
+
+
+
+state = state[:num_examples]
+theta = state[:,0]
+theta = np.where(theta < 0.0, theta + 2*np.pi, theta)
+state[:,0] = theta
+
 
 # Scale pixel values to a range of 0 to 1 before feeding them to the neural network model.
 observation = observation.astype(np.float32) / 255.
@@ -58,7 +76,7 @@ if 0 < test_split < 1:
 else:
     raise ValueError('Must hold-out data as a test dataset. Set parameter 0 < test_split < 1.')
 
-test_obs   = observation[split_at:, :, :, :]
+test_obs   = observation[split_at:, :, :, :, :]
 test_theta = state[split_at:, 0]
 test_trig  = np.hstack([np.sin(test_theta)[:, None], np.cos(test_theta)[:, None]])
 test_omega = state[split_at:, :]
@@ -87,61 +105,59 @@ train_omega = state[:split_at, :]
                                           # MODELS
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+print("Build model...")
 # MODEL PARAMETERS
-model_type = 'model_cnn'  # 'model_theta', 'model_trig', 'model_cnn'
+model_type = 'model_lstm'  # 'model_theta', 'model_trig', 'model_cnn'
 
 # BUILD MODELS
 # Building the neural network requires configuring the layers of the model, then compiling the model.
-if model_type == 'model_theta':  # Predict theta directly
-    """TASK 1.1: CREATE MODEL HERE"""
+
+if model_type == 'model_lstm':
+
+    """However, it can be very useful when building a Sequential model incrementally to be able
+    to display the summary of the model so far, including the current output shape.
+    In this case, you should start your model by passing an Input object to your model,
+    so that it knows its input shape from the start:
 
     model = keras.Sequential()
-    model.add(layers.Flatten()) #flatten input
-    model.add(layers.Dense(units=128, activation="relu")) #128 units and rectified linear unit activation function
-    model.add(layers.Dense(units=1, activation=None)) #one unit, no activation (linear)
-
-    """TASK 1.1: END"""
-    str_model_type = '$M^\\theta$'
-
-
-elif model_type == 'model_trig':  # Predict trigonometric functions of theta
-    """TASK 1.2: CREATE MODEL HERE"""
-
+    model.add(keras.Input(shape=(4,)))
+    model.add(layers.Dense(2, activation="relu"))
+   """
     model = keras.Sequential()
-    model.add(layers.Flatten()) #flatten input
-    model.add(layers.Dense(units=128, activation="relu")) #128 units and rectified linear unit activation function
-    model.add(layers.Dense(units=2,activation=None)) #TWO UNITS, no activation (linear)
+    model.add(keras.layers.InputLayer(input_shape=(observation.shape[1:])))
 
-    """TASK 1.2: END"""
-    str_model_type = '$M^{trig}$'
-
-elif model_type == 'model_cnn':  # Use a CNN layer with MAx pooling for predictioon of the TWO outputs
-
-    """TASK 1.3: CREATE MODEL HERE"""
-    model = keras.Sequential()
     model.add(layers.Conv2D(filters=32,kernel_size=3,activation="relu"))
-    model.add(layers.MaxPooling2D(pool_size=(2,2)))
-    model.add(layers.Flatten())
-    model.add(layers.Dense(units=2, activation=None)) #TWO outputs (trig), no activation
-    """TASK 1.3: END"""
-    str_model_type = '$M^{cnn}$'
+    model.add(layers.MaxPooling3D(pool_size=(1,2,2)))
 
+    model.add(layers.Conv2D(filters=16,kernel_size=5,activation="relu"))
+    model.add(layers.MaxPooling3D(pool_size=(1,3,3)))
+
+    model.add(layers.Flatten()   )
+
+
+    model.add(layers.Reshape((-1,1)))
+    model.add(layers.Dense(T))
+
+    model.add(layers.LSTM(2))
+
+    str_model_type = "LSTM"
 
 else:
     raise ValueError('Unknown model type selected.')
 
-# VERIFY THAT A MODEL DEFINED
+#            VERIFY THAT A MODEL DEFINED
 try:
     model
 except NameError:
     raise ValueError("Variable 'model' not defined! Make sure to name every keras model 'model'!")
 
-# COMPILE MODEL
-"""TASK 1.1: COMPILE MODEL HERE"""
+#                COMPILE MODEL
 
+
+print("Compile model...")
 model.compile(optimizer='ADAM',loss='mse' )
 
-"""TASK 1.1: END"""
+
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                           # FIT MODEL
@@ -149,29 +165,23 @@ model.compile(optimizer='ADAM',loss='mse' )
 # initialize tqdm callback with default parameters
 tqdm_callback = tfa.callbacks.TQDMProgressBar()
 
-if model_type == 'model_theta':
-    """TASK 1.1: TRAIN MODEL HERE"""
-    model.fit(train_obs,train_theta,batch_size=64,epochs=30,shuffle=True)
-    """TASK 1.1: END"""
-
-else:
-    """TASK 1.2: TRAIN MODEL HERE"""
-    model.fit(train_obs,train_trig,batch_size=64,epochs=30,shuffle=True)
-    """TASK 1.2: END"""
 
 model.summary()
+if model_type == 'model_lstm':
+    model.fit(train_obs,train_omega,batch_size=64,epochs=30,shuffle=True)
+
+
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                           # EVALUATE
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-if model_type == 'model_theta':
-    test_scores = model.evaluate(test_obs, test_theta, verbose=2)
-    pred_theta  = model.predict(test_obs)[:, 0]
+
+if model_type == 'model_lstm':
+    test_scores = model.evaluate(test_obs, test_omega, verbose=2)
+    predictions  = model.predict(test_obs)[:, :]
 
 else:
-    test_scores = model.evaluate(test_obs, test_trig, verbose=2)
-    output      = model.predict(test_obs)
-    pred_theta  = np.arctan2(output[:, 0], output[:, 1])
+    raise ValueError("Variable 'model' not defined! Make sure to name every keras model 'model'!")
 
 print("Test loss:", test_scores)
 
@@ -183,7 +193,7 @@ test_accuracy = True
 
 if test_accuracy:
     # Calculate average error per bin over theta range [-pi, pi]
-    test_error = np.abs(test_theta - pred_theta)
+    test_error = np.abs(test_theta - predictions[0])
     test_error[test_error > np.pi] -= 2*np.pi
     test_error = np.abs(test_error)
     bins = np.linspace(-np.pi, np.pi, 21)
