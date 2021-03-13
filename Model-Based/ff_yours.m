@@ -10,4 +10,7 @@ function tau_ff = ff_yours(th_curr, th_d_curr, th_des, th_d_des, th_dd_des, your
 %     robot parameters rp.
 %     
     tau_ff = [0; 0];
+    
+    
+    
 end

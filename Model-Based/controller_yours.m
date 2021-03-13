@@ -17,8 +17,8 @@ dt = 0.03; % time difference in seconds
 t = 0:dt:sim_time;
 
 %% DESIRED TRAJECTORY DATA
-d2r  = pi/180;             % degrees to radians
-tp.w = 72*d2r;            % rotational velocity rad/s
+d2r   = pi/180;             % degrees to radians
+tp.w  = 72*d2r;            % rotational velocity rad/s
 tp.rx = 1.75; tp.ry = 1.25; % ellipse radii
 tp.ell_an = 45*d2r;       % angle of inclination of ellipse
 tp.x0 = 0.4;  tp.y0 = 0.4;  % center of ellipse  

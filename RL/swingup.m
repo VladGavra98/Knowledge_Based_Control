@@ -1,6 +1,6 @@
 function [par, ta, xa] = swingup(par)
 
-    par.simtime = 1;     % Trial length
+    par.simtime = 20;     % Trial length
     par.simstep = 0.05;   % Simulation time step
     par.maxtorque = 1.5;  % Maximum applicable torque
     
@@ -25,7 +25,7 @@ function [par, ta, xa] = swingup(par)
             
             % TODO: Initialize the inner loop
              x = swingup_initial_state();   % zero angle and zero velocity
-             a = randi(5);                % random torque
+             a = randi(5);                  % random initial torque
              
             % Inner loop: simulation steps
             for tt = 1:ceil(par.simtime/par.simstep)   % K time iterations
@@ -44,17 +44,17 @@ function [par, ta, xa] = swingup(par)
                 % use s for discretized state
                 sP = discretize_state(x, par);
                 
-                aP = execute_policy(Q, s, par);
-                
+                aP = execute_policy(Q, sP, par);
+
                 reward = observe_reward(a, sP, par);
-                
+
                 Q = update_Q(Q, s, a, reward, sP, aP, par);
                 a = aP;
 
                 %debugging:
 %                 a,Q(s(1),s(2),a)  %problem with update
                 
-                
+            
                 % Keep track of cumulative reward
                 ra(ii) = ra(ii)+reward;
 
@@ -74,7 +74,7 @@ function [par, ta, xa] = swingup(par)
             end
             
             % Annealing:
-            par.epsilon=par.epsilon/1.001
+%             par.epsilon = par.epsilon/1.001
         end
         
         % save learned Q value function
@@ -146,9 +146,9 @@ end
 
 function par = get_parameters(par)
     % TODO: set the values
-    par.epsilon = 0.3;        % Random action rate      CHANGED FROM 0
-    par.epsilon0 = 0.3;       %For plotting only!!
-    par.gamma = 0.99;       % Discount rate
+    par.epsilon = 0.2;        % Random action rate      CHANGED FROM 0
+    par.epsilon0 = 0.2;       %For plotting only!!
+    par.gamma = 1;       % Discount rate
     par.alpha = 0.25;          % Learning rate           CHANGED FROM 0
     par.pos_states = 31;     % Position discretization   CHANGED FROM 0
     par.vel_states = 31;     % Velocity discretization   CHANGED FROM 0
@@ -158,7 +158,7 @@ end
 
 function Q = init_Q(par)
     % TODO: Initialize the Q table.
-    Q = 5*ones(par.pos_states,par.vel_states,par.actions);
+    Q = 1*ones(par.pos_states,par.vel_states,par.actions);
 
     % optimistic search (even if we go rather greedy later)
 end
@@ -185,9 +185,8 @@ function r = observe_reward(a, sP, par)
     % TODO: resulting in state sP.
     
     % Reward proportional to the potential energy, independent of action a
-
-    r(sP(1)==15 && sP(2)==15) = 10;
-    r(sP(1)~=15 || sP(2)~=15) = 0;
+    r(sP(1) == floor(par.pos_states/2) && sP(2) == floor(par.vel_states/2)) = 10;
+    r(sP(1) ~= floor(par.pos_states/2) || sP(2) ~= floor(par.vel_states/2)) = 0;
 
 
 end
@@ -199,8 +198,8 @@ function t = is_terminal(sP, par)
 %     else
 %         t=0;
 %     end
-    t(sP(1)==15 && sP(2)==15) = 1;
-    t(sP(1)~=15 || sP(2)~=15) = 0 ;
+    t(sP(1) == floor(par.pos_states/2) && sP(2) == floor(par.vel_states/2)) = 1;
+    t(sP(1) ~= floor(par.pos_states/2) || sP(2) ~= floor(par.vel_states/2)) = 0 ;
     
 end
 
@@ -211,9 +210,9 @@ function a = execute_policy(Q, s, par)
     
     p = rand;
     if p <= par.epsilon
-         a = randi(par.actions);  % exploration 
+         a = randi(par.actions);      % exploration 
     else
-        [Qmax,a] = max(Q(s(1),s(2),:));   % greedy explotation 
+        [Qmax,a] = max(Q(s(1),s(2),:));    % greedy  
     end
 end
 
