@@ -12,6 +12,7 @@
 % end
 seed = 5;
 rng(seed);
+clear all;
 
 par = robot_set_parameters;
 par.run_type = 'learn';
