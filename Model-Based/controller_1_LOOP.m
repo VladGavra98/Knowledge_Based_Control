@@ -3,6 +3,7 @@ clearvars
 close all
 clear;
 
+batch_size = 9;
 
 rp = define_robot_parameters();
 sim_time = 10; % simualtion time in seconds
@@ -41,6 +42,13 @@ curr_th_dd  = zeros(1,668);
 curr_tau_ff = zeros(1,668);
 curr_tau_fb = zeros(1,668);
     
+des_x      = zeros(1,668);
+des_x_d    = zeros(1,668);
+des_x_dd   = zeros(1,668);
+des_th     = zeros(1,668);
+des_th_d   = zeros(1,668);
+des_th_dd  = zeros(1,668);
+
 for i = 1:668
         %disp(curr.x(i));
         curr_x(i)      = curr.x(i); %vector of x's: odd is first joint, even is second
@@ -52,48 +60,78 @@ for i = 1:668
         curr_th_dd(i)  = curr.th_dd(i);
         curr_tau_ff(i) = curr.tau_ff(i);
         curr_tau_fb(i) = curr.tau_fb(i);
+        
+        des_x(i)      = des.x(i); %vector of x's: odd is first joint, even is second
+        des_x_d(i)    = des.x_d(i);
+        des_x_dd(i)   = des.x_dd(i);
+        des_th(i)     = des.th(i);
+        des_th_d(i)   = des.th_d(i);
+        des_th_dd(i)  = des.th_dd(i);
 end
 %separate the full vector between even and odd joints
 % odd index values (1st joint)
-curr_x1    = curr_x(1:2:end) ;
-curr_x_d1  = curr_x_d(1:2:end) ;
-curr_x_dd1 = curr_x_dd(1:2:end) ;
-curr_x_eb1 = curr_x_eb(1:2:end);
-curr_th1   = curr_th(1:2:end);
-curr_th_d1 = curr_th_d(1:2:end) ;
-curr_th_dd1 = curr_th_dd(1:2:end) ;
+curr_x1      = curr_x(1:2:end) ;
+curr_x_d1    = curr_x_d(1:2:end) ;
+curr_x_dd1   = curr_x_dd(1:2:end) ;
+curr_x_eb1   = curr_x_eb(1:2:end);
+curr_th1     = curr_th(1:2:end);
+curr_th_d1   = curr_th_d(1:2:end) ;
+curr_th_dd1  = curr_th_dd(1:2:end) ;
 curr_tau_ff1 = curr_tau_ff(1:2:end) ;
 curr_tau_fb1 = curr_tau_fb(1:2:end) ;
+
+des_x1     = des_x(1:2:end) ;
+des_x_d1   = des_x_d(1:2:end) ;
+des_x_dd1  = des_x_dd(1:2:end) ;
+des_th1    = des_th(1:2:end);
+des_th_d1  = des_th_d(1:2:end) ;
+des_th_dd1 = des_th_dd(1:2:end) ;
+
 % even index values (2nd joint)
-curr_x2    = curr_x(2:2:end) ;
-curr_x_d2  = curr_x_d(2:2:end) ;
-curr_x_dd2 = curr_x_dd(2:2:end) ;
-curr_x_eb2 = curr_x_eb(2:2:end);
-curr_th2  = curr_th(2:2:end);
-curr_th_d2 = curr_th_d(2:2:end) ;
-curr_th_dd2 = curr_th_dd(2:2:end) ;
+curr_x2      = curr_x(2:2:end) ;
+curr_x_d2    = curr_x_d(2:2:end) ;
+curr_x_dd2   = curr_x_dd(2:2:end) ;
+curr_x_eb2   = curr_x_eb(2:2:end);
+curr_th2     = curr_th(2:2:end);
+curr_th_d2   = curr_th_d(2:2:end) ;
+curr_th_dd2  = curr_th_dd(2:2:end) ;
 curr_tau_ff2 = curr_tau_ff(2:2:end) ;
 curr_tau_fb2 = curr_tau_fb(2:2:end) ;
+
+des_x2     = des_x(2:2:end) ;
+des_x_d2   = des_x_d(2:2:end) ;
+des_x_dd2  = des_x_dd(2:2:end) ;
+des_th2    = des_th(2:2:end);
+des_th_d2  = des_th_d(2:2:end) ;
+des_th_dd2 = des_th_dd(2:2:end) ;
     
 %create a 2x334 matrix for each state (feature)
-curr_xs    = [curr_x1;curr_x2];     %should yield the same as curr.x
-curr_x_ds  = [curr_x_d1;curr_x_d2];
-curr_x_dds = [curr_x_dd1;curr_x_dd2];
-curr_x_ebs = [curr_x_eb1;curr_x_eb2];
-curr_ths = [curr_th1;curr_th2];
-curr_th_ds = [curr_th_d1;curr_th_d2];
-curr_th_dds = [curr_th_dd1;curr_th_dd2];
+curr_xs      = [curr_x1;curr_x2];     %should yield the same as curr.x
+curr_x_ds    = [curr_x_d1;curr_x_d2];
+curr_x_dds   = [curr_x_dd1;curr_x_dd2];
+curr_x_ebs   = [curr_x_eb1;curr_x_eb2];
+curr_ths     = [curr_th1;curr_th2];
+curr_th_ds   = [curr_th_d1;curr_th_d2];
+curr_th_dds  = [curr_th_dd1;curr_th_dd2];
 curr_tau_ffs = [curr_tau_ff1;curr_tau_ff2];
 curr_tau_fbs = [curr_tau_fb1;curr_tau_fb2];
-  
-%start the 1st 3D matrix
-CURR_BIG = cat(3, curr_xs, curr_x_ds, curr_x_dds, curr_x_ebs, curr_ths, curr_th_ds, curr_th_dds, curr_tau_ffs,  curr_tau_fbs);
- 
 
+des_xs       = [des_x1;des_x2];     %should yield the same as des.x
+des_x_ds     = [des_x_d1;des_x_d2];
+des_x_dds    = [des_x_dd1;des_x_dd2];
+des_ths      = [des_th1;des_th2];
+des_th_ds    = [des_th_d1;des_th_d2];
+des_th_dds   = [des_th_dd1;des_th_dd2];
+
+
+%start the 1st 3D matrix
+CURR_IN = cat(3, curr_ths, curr_th_ds, curr_th_dds);
+CURR_OUT = curr_tau_ffs;
+DES_IN  = cat(3, des_ths, des_th_ds, des_th_dds);
 
 
 %% CREATE MORE OF THESE 'BIG' MATRICES AND CONCATENATE THEM IN A LOOP
-for B = 1:9 %batch size
+for B = 1:batch_size %batch size
 
     % DESIRED TRAJECTORY DATA
     w1 = 70;
@@ -151,6 +189,13 @@ for B = 1:9 %batch size
     curr_tau_ff = zeros(1,668);
     curr_tau_fb = zeros(1,668);
     
+    des_x      = zeros(1,668);
+    des_x_d    = zeros(1,668);
+    des_x_dd   = zeros(1,668);
+    des_th     = zeros(1,668);
+    des_th_d   = zeros(1,668);
+    des_th_dd  = zeros(1,668);
+    
     for i = 1:668
         %disp(curr.x(i));
         curr_x(i)      = curr.x(i); %vector of x's: odd is first joint, even is second
@@ -162,6 +207,13 @@ for B = 1:9 %batch size
         curr_th_dd(i)  = curr.th_dd(i);
         curr_tau_ff(i) = curr.tau_ff(i);
         curr_tau_fb(i) = curr.tau_fb(i);
+        
+        des_x(i)      = des.x(i); %vector of x's: odd is first joint, even is second
+        des_x_d(i)    = des.x_d(i);
+        des_x_dd(i)   = des.x_dd(i);
+        des_th(i)     = des.th(i);
+        des_th_d(i)   = des.th_d(i);
+        des_th_dd(i)  = des.th_dd(i);
     end
     
     %separate the full vector between even and odd joints
@@ -175,6 +227,15 @@ for B = 1:9 %batch size
     curr_th_dd1 = curr_th_dd(1:2:end) ;
     curr_tau_ff1 = curr_tau_ff(1:2:end) ;
     curr_tau_fb1 = curr_tau_fb(1:2:end) ;
+    
+    des_x1     = des_x(1:2:end) ;
+    des_x_d1   = des_x_d(1:2:end) ;
+    des_x_dd1  = des_x_dd(1:2:end) ;
+    des_th1    = des_th(1:2:end);
+    des_th_d1  = des_th_d(1:2:end) ;
+    des_th_dd1 = des_th_dd(1:2:end) ;
+    
+    
     % even index values (2nd joint)
     curr_x2    = curr_x(2:2:end) ;
     curr_x_d2  = curr_x_d(2:2:end) ;
@@ -185,6 +246,13 @@ for B = 1:9 %batch size
     curr_th_dd2 = curr_th_dd(2:2:end) ;
     curr_tau_ff2 = curr_tau_ff(2:2:end) ;
     curr_tau_fb2 = curr_tau_fb(2:2:end) ;
+    
+    des_x2     = des_x(2:2:end) ;
+    des_x_d2   = des_x_d(2:2:end) ;
+    des_x_dd2  = des_x_dd(2:2:end) ;
+    des_th2    = des_th(2:2:end);
+    des_th_d2  = des_th_d(2:2:end) ;
+    des_th_dd2 = des_th_dd(2:2:end) ;
     
     %create a 2x334 matrix for each state (feature)
     
@@ -197,25 +265,32 @@ for B = 1:9 %batch size
     curr_th_dds = [curr_th_dd1;curr_th_dd2];
     curr_tau_ffs = [curr_tau_ff1;curr_tau_ff2];
     curr_tau_fbs = [curr_tau_fb1;curr_tau_fb2];
+    
+    des_xs       = [des_x1;des_x2];     %should yield the same as des.x
+    des_x_ds     = [des_x_d1;des_x_d2];
+    des_x_dds    = [des_x_dd1;des_x_dd2];
+    des_ths      = [des_th1;des_th2];
+    des_th_ds    = [des_th_d1;des_th_d2];
+    des_th_dds   = [des_th_dd1;des_th_dd2];
       
-    CURR_NEW = cat(3, curr_xs, curr_x_ds, curr_x_dds, curr_x_ebs, curr_ths, curr_th_ds, curr_th_dds, curr_tau_ffs,  curr_tau_fbs);
-
-    %% NOT NEEDED
-    %robot_animation(t, curr, des);
-    %analyze_performance(t, curr, des);
-
-    %% SAVE ALL STATES PER RUN INTO ONE MAT FILE (ONE FOR EACH RUN)
-    %filename = sprintf('File%d.mat', B);
-    %save(filename, 'C3');    %each file (1 to batch size) has now a 2x334x9 matrix
+    CURR_IN_NEW  = cat(3, curr_ths, curr_th_ds, curr_th_dds);
+    CURR_OUT_NEW = curr_tau_ffs;
+    DES_IN_NEW  = cat(3, des_ths, des_th_ds, des_th_dds);
      
-    CURR_BIG = cat(4, CURR_BIG, CURR_NEW);
+    CURR_IN = cat(4, CURR_IN, CURR_IN_NEW);
+    CURR_OUT = cat(3, CURR_OUT, CURR_OUT_NEW);
+    DES_IN = cat(4, DES_IN, DES_IN_NEW);
 end
 
 %Next: stack all together in the 4th dimension
 
-save('BIG.mat', 'CURR_BIG')
+CURR_IN = permute(CURR_IN, [4,2,3,1]);
+DES_IN = permute(DES_IN, [4,2,3,1]);
+CURR_OUT = permute(CURR_OUT, [3,2,1]);
+
+save('CURR_IN.mat', 'CURR_IN')
+save('CURR_OUT.mat', 'CURR_OUT')
+save('DES_IN.mat', 'DES_IN')
 
 
-
-    
  
