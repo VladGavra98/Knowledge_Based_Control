@@ -1,5 +1,4 @@
-clc
-clearvars
+
 close all
 
 % tau - torques applied to joints
@@ -29,8 +28,11 @@ des = calculate_trajectory(t, tp, rp);
 th_0 = des.th(:,1) - [0.1; 0.2];
 th_d_0 = des.th_d(:,1);
 
+loaded_model = load('model_trained.mat');
+net = loaded_model.save_model{1};
+
 % Your Code
-your_parameters = [];
+your_parameters = [t,net];
 
 %% SIMULATE ROBOT
 Kp = [500; 500];
@@ -41,3 +43,4 @@ curr = simulate_robot(t, dt, th_0, th_d_0, des, rp, ...
 
 robot_animation(t, curr, des);
 analyze_performance(t, curr, des);
+

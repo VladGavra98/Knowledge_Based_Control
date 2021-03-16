@@ -9,8 +9,16 @@ function tau_ff = ff_yours(th_curr, th_d_curr, th_des, th_d_des, th_dd_des, your
 %     and this is the only purpose for which you are allowed to use the
 %     robot parameters rp.
 %     
-    tau_ff = [0; 0];
     
+    net = your_parameters(2);
+    x = vertcat(th_curr, th_d_curr, th_des, th_d_des, th_dd_des);
+    x = num2cell(x,[1,2]);
     
+%     debugging:
+%     disp(x)
+%     disp(net.Layers)
+    tau = predict(net,x);
     
+    tau_ff = cell2mat(tau);
+
 end

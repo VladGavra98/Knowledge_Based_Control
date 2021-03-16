@@ -32,8 +32,12 @@ th_d_0 = des.th_d(:,1);
 
 
 %% SIMULATE ROBOT
-Kp = [2000; 2000];
-Kd = [100; 100];
+% Kp = [2000; 2000];
+% Kd = [100; 100];
+
+Kp = [500; 500];
+Kd = [50; 50];
+
 curr = simulate_robot(t, dt, th_0, th_d_0, des, rp, ...
     @(th_curr, th_d_curr, th_des, th_d_des, th_dd_des) ff_0(th_curr, th_d_curr, th_des, th_d_des, th_dd_des), ...
     @(th_curr, th_d_curr, th_des, th_d_des) fb_pd(th_curr, th_d_curr, th_des, th_d_des, Kp, Kd));

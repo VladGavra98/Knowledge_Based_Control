@@ -72,3 +72,4 @@ fprintf('yours %f\n', mean(RMSE_yours.x));
 fprintf('PD %f\n', mean(RMSE_PD.x));
 fprintf('DYN1 %f\n', mean(RMSE_DYN1.x));
 fprintf('DYN2 %f\n', mean(RMSE_DYN2.x));
+
