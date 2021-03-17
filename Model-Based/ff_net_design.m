@@ -18,19 +18,13 @@ noise_value = 0.0;   % add noise for training
 
 % Switch to cell arrays for later
 Xtrain = IN(idx(1:round(p*m)),:,:,:);
-Xtrain = correctSize(Xtrain,T,[features],noise_value);
-
 Xtest  = IN(idx(round(p*m)+1:end),:,:,:);
-% Xtest = num2cell(Xtest,[2 3]);
-Xtest = correctSize(Xtest,T,[features],0.);
+
+
 
 Ytrain = OUT(idx(1:round(p*m)),:,:,:);
-% Ytrain = num2cell(Ytrain,[2 3]);
-Ytrain = correctSize(Ytrain,T,2,0.);
-
 Ytest  = OUT(idx(round(p*m)+1:end),:,:,:);
-% Ytest = num2cell(Ytest,[2 3]);
-Ytest = correctSize(Ytest,T,2,0.);
+
 
 disp("Loaded & correct shape")
 %% __Testing the data:
@@ -92,44 +86,19 @@ mini_batch = 64;
 
 feature_dimension = features;
 num_responses = size(Ytrain{1},1);
-num_hidden1 = 100;
-num_hidden2 = 100;
+num_hidden1 = 200;
+num_hidden2 = 200;
 num_hidden3 = 50;
 
 validation_freq = mini_batch;
 
-layers = [ ...
-    sequenceInputLayer(feature_dimension,'Name','Input Layer')
-    
-    lstmLayer(num_hidden1,'OutputMode','sequence')
-    lstmLayer(num_hidden2,'OutputMode','sequence')
 
-    
-    %     fullyConnectedLayer(100)
-    %     reluLayer()
-    
-    %     dropoutLayer(0.3)
-    
-    %     fullyConnectedLayer(100)
-    %     reluLayer()
-    
-    %     dropoutLayer(0.2)
-    fullyConnectedLayer(num_responses)
-    regressionLayer];
+net = feedforwardnet(10);
+
+feedforwardnet(hiddenSizes,trainFcn)
 
 
-% options = trainingOptions('adam', ...
-%     'Epsilon',10^(-8),...
-%     'L2Regularization',0.01,...
-%     'MaxEpochs',max_epochs, ...
-%     'MiniBatchSize',mini_batch, ...
-%     'InitialLearnRate',0.01, ...
-%     'Shuffle','never', ...
-%      'ValidationData',{Xtest,Ytest}, ...
-%     'ValidationFrequency',validation_freq, ...
-%     'ExecutionEnvironment', 'gpu', ...
-%     'Plots','training-progress',...
-%     'Verbose',1);
+
 
 options = trainingOptions('adam', ...
     'Epsilon',10^(-8),...

@@ -30,8 +30,14 @@ RMSE_yours.th = zeros(1,length(rot_vel));
 Kp = [500; 500];
 Kd = [50; 50];
 
-% Your Code
-your_parameters = [];
+
+%% My code:
+your_parameters = {des,t,tau_pred};
+loaded_model = load('model_trainer.mat');
+net = loaded_model.model_trainer{1};
+
+features = 6;
+
 
 %% SIMULATE ROBOT
 for iter = 1:length(rot_vel)
@@ -42,6 +48,8 @@ for iter = 1:length(rot_vel)
 
     th_0 = des.th(:,1) - [0.1; 0.2];
     th_d_0 = des.th_d(:,1);
+    
+    
 
     %% SIMULATE ROBOT
     curr = simulate_robot(t, dt, th_0, th_d_0, des, rp, ...

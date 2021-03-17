@@ -5,7 +5,7 @@ close all
 clear;
 
 %% Initialise sim parameters
-batch_size = 500;
+batch_size = 5000;
 batch_size = batch_size - 1; 
 
 rp = define_robot_parameters();
@@ -131,44 +131,47 @@ des_th_ds    = [des_th_d1;des_th_d2];
 des_th_dds   = [des_th_dd1;des_th_dd2];
 
 
-%start the 1st 3D matrix
-% CURR_IN = vertcat(curr_ths, curr_th_ds, curr_th_dds);
-% CURR_OUT = curr_tau_ffs;
-% DES_IN  = vertcat(des_ths, des_th_ds, des_th_dds);
+% LSTm data:
+% IN  = [des_ths;des_th_ds;des_th_dds];
+% OUT = curr_tau_ffs;
 
-IN  = [curr_ths;curr_th_ds; des_ths;des_th_ds;des_th_dds];
-OUT = curr_tau_ffs;
+
+w1 = 65;
+w2 = 85;
+
+x01 = 0.4;
+x02 = 0.4;
+y01 = 0.4;
+y02 = 0.4;
+
+rex1 = 1.74;
+rex2 = 1.76;
+rey1 = 1.24;
+rey2 = 1.26;
+
+ell_an1 = 44;
+ell_an2 = 46;   
 
 %% CREATE MORE OF THESE 'BIG' MATRICES AND CONCATENATE THEM IN A LOOP
 for B = 1:batch_size %batch size
 
     % DESIRED TRAJECTORY DATA
-    w1 = 69;
-    w2 = 81;
+
     ranw = w1 + rand()*(w2-w1);
     tp.w = ranw*d2r;            % rotational velocity rad/s
     %tp.w = 72*d2r;            % rotational velocity rad/s
 
     %Randomize radii
-    rex1 = 1.5;
-    rex2 = 1.8;
-    rey1 = 1.5;
-    rey2 = 1.8;
-    tp.rx = rex1 +rand()*(rex2-rex1); 
+    tp.rx = rex1 +rand()*(rex2-rex1);
     tp.ry = rey1 +rand()*(rey2-rey1);
     %tp.rx = 1.75; tp.ry = 1.25; % ellipse radii
 
     %Randomize inclination angle
-    ell_an1 = 35;
-    ell_an2 = 55;
     tp.ell_an = (ell_an1 + rand()*(ell_an2-ell_an1))*d2r;       % angle of inclination of ellipse
     %tp.ell_an = 45*d2r;       % angle of inclination of ellipse
 
     %randomize center of elipse
-    x01 = -0.1;
-    x02 = 0.2;
-    y01 = -0.1;
-    y02 = 0.2;
+
     tp.x0 = x01 + rand()*(x02-x01);  
     tp.y0 = y01 + rand()*(y02-y01);  % center of ellipse  
     %tp.x0 = 0.4;  tp.y0 = 0.4;  % center of ellipse  
@@ -182,7 +185,7 @@ for B = 1:batch_size %batch size
     
     
     curr = simulate_robot(t, dt, th_0, th_d_0, des, rp, ...
-        @(th_curr, th_d_curr, th_des, th_d_des, th_dd_des) ff_dyn_model_1(th_curr, th_d_curr, th_des, th_d_des, th_dd_des, rp), ...
+        @(th_curr, th_d_curr, th_des, th_d_des, th_dd_des) ff_dyn_model_2(th_curr, th_d_curr, th_des, th_d_des, th_dd_des, rp), ...
         @(th_curr, th_d_curr, th_des, th_d_des) fb_pd(th_curr, th_d_curr, th_des, th_d_des, Kp, Kd));
        
     A = curr.x(1)^2+curr.x(2)^2+rp.l1^2-rp.l2^2+2*rp.l1*curr.x(1);
@@ -292,7 +295,9 @@ for B = 1:batch_size %batch size
         des_th_ds    = [des_th_d1;des_th_d2];
         des_th_dds   = [des_th_dd1;des_th_dd2];
 
-        IN_NEW = vertcat(curr_ths,curr_th_ds, des_ths, des_th_ds, des_th_dds);
+%         IN_NEW = vertcat(curr_ths,curr_th_ds, des_ths, des_th_ds, des_th_dds);
+
+        IN_NEW = vertcat(des_ths, des_th_ds, des_th_dds);  
         OUT_NEW = curr_tau_ffs;
 
         % Update the data set
@@ -306,7 +311,7 @@ for B = 1:batch_size %batch size
 end
 disp('Data generated')
 
-%% Next: stack all together in the 4th dimension
+%% Next: stack all together in the 3th dimension
 
 IN = permute(IN, [3,1,2]);
 OUT = permute(OUT, [3,1,2]);
