@@ -11,28 +11,19 @@ function tau_ff = ff_yours(th_curr, th_d_curr, th_des, th_d_des, th_dd_des, your
 %     robot parameters rp.
      
     
-    des = your_parameters{1};
-    t   = your_parameters{2};
-    net = your_parameters{3};
-    
-    
-%     ind = 1:length(t);
-%     
-% 
-%     state = 1;
-%     current_time = ind(des.th_d(state,:) == th_d_des(state));
-    
-%     current_time = current_time+1;
-       
+    net = your_parameters{1};
+%     mu = your_parameters{2};
+%     sig = your_parameters{3};
 
-    x = vertcat(th_des, th_d_des, th_dd_des);
-    x = num2cell(x,[1,2]);
+    %wrap the angle
+    th_des = wrap(th_des);
     
-%     debugging:
-%     disp(x)
-%     disp(net.Layers)
-    tau = predict(net,x);
-    tau_ff = cell2mat(tau);
+    x = vertcat(th_curr,th_d_curr,th_des, th_d_des, th_dd_des);
+    x = reshape(x,  [10,1]);
+   
+%     x = (x- mu )./ sig;
+    tau_ff = predict(net,x);
+ 
 
     
 %    tau_ff = tau_pred{1}(:,current_time);

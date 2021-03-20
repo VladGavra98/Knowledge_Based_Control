@@ -7,118 +7,103 @@ file_out = strcat(root,'\Model-Based\OUT.mat');
 load(file_in);
 load(file_out);
 
-[m, features,T] = size(IN);           % number of samples
-dt = 0.03;
-t = 1:1:T;
+[m,T] = size(IN);           % number of samples
+[features,T] = size(IN{1});
+
+% %                    Change it to image format
+% for i=1:1:m
+%     IN{i} =  reshape(IN{i},  [1,1,1,features]);
+% end
+% 
+% for i=1:1:m
+%     OUT{i} =  reshape(OUT{i},  [1,2]);
+% end
+
 %%                        Split Train/Test
 
-p = 0.9; % ratio between training batch size and testing size
+p = 0.95;    % ratio between training batch size and testing size
+v = 0.05;
 idx = randperm(m);
-noise_value = 0.0;   % add noise for training
+
 
 % Switch to cell arrays for later
 Xtrain = IN(idx(1:round(p*m)),:,:,:);
 Xtest  = IN(idx(round(p*m)+1:end),:,:,:);
 
-
-
 Ytrain = OUT(idx(1:round(p*m)),:,:,:);
 Ytest  = OUT(idx(round(p*m)+1:end),:,:,:);
 
 
+% xtrain = cell2mat(Xtrain);
+% xtrain = permute(xtrain,[2,3,4,1]);
+% 
+% xtest = cell2mat(Xtest);
+% xtest = permute(xtest,[2,3,4,1]);
+% 
+% ytrain = cell2mat(Ytrain);
+% ytrain = permute(ytrain,[2,1]);
+% 
+% ytest = cell2mat(Ytest);
+% ytest = permute(ytest,[2,1]);
+
 disp("Loaded & correct shape")
-%% __Testing the data:
-% figure('Name','Tau_1');
-% hold on;
-%
-% t = 1:1:T;
-%
-% for i = 1:10:round(p*m)
-%     % plot(Xtrain{i}(1,:,1,1), Ytrain{i}(1,:,1,1))  % tau1 against theta curr 1
-%     plot(t, Ytrain{i}(1,:,1))
-% end
-% hold off;
-
-
-figure('Name','Theta 1');
-hold all
-for i = 1:10:round(p*m)
-    % plot(Xtrain{i}(1,:,1,1), Ytrain{i}(1,:,1,1))  % tau1 against theta curr 1
-    plot(t, Xtrain{i}(6,:,1))
-    
-end
-hold off;
 
 
 %%                           PRE-PROCESSING
-mu = mean([Xtrain{:}],[2 3]);
-sig = std([Xtrain{:}],0,[2 3]);
-
-for i = 1:numel(Xtrain)
-    Xtrain{i} = (Xtrain{i} - mu) ./ sig;
-end
-
-mu = mean([Xtest{:}],[2 3]);
-sig = std([Xtest{:}],0,[2 3]);
-
-for i = 1:numel(Xtest)
-    Xtest{i} = (Xtest{i} - mu) ./ sig;
-end
-
-%%     Save Mu & Sigma
-filename = strcat(root,'\Model-Based\mu_sig.mat');
-mu_sig = {mu, sig};
-save(filename,'mu_sig');
-
-
-% mu = mean([Ytrain{:}],[2 3]);
-% sig = std([Ytrain{:}],0,[2 3]);
-%
-% for i = 1:numel(Ytrain)
-%     Ytrain{i} = (Ytrain{i} - mu) ./ sig;
+% mu = mean([Xtrain{:}],[2 3]);
+% sig = std([Xtrain{:}],0,[2 3]);
+% 
+% for i = 1:numel(Xtrain)
+%     Xtrain{i} = (Xtrain{i} - mu) ./ sig;
 % end
-%
-% mu = mean([Ytest{:}],[2 3]);
-% sig = std([Ytest{:}],0,[2 3]);
-%
-% for i = 1:numel(Ytest)
-%     Ytest{i} = (Ytest{i} - mu) ./ sig;
+% 
+% mu = mean([Xtest{:}],[2 3]);
+% sig = std([Xtest{:}],0,[2 3]);
+% 
+% for i = 1:numel(Xtest)
+%     Xtest{i} = (Xtest{i} - mu) ./ sig;
 % end
+% 
+% %%     Save Mu & Sigma
+% filename = strcat(root,'\Model-Based\mu_sig.mat');
+% mu_sig = {mu, sig};
+% save(filename,'mu_sig');
+
 
 %%                             BUILD MODEL
 max_epochs = 100;
-mini_batch = 2*256;
+mini_batch = 8*256;
 
-input_size = 6;
+input_size = 10;
 num_responses = size(Ytrain{1},1);
 
-
-validation_freq = 200;
-
-
-
+validation_freq = 1000;
 
  % Feedforward deep:  
 layers = [ ... 
-    sequenceInputLayer(input_size)
+%     imageInputLayer([1 1 features],'Name','Input_layer')
+    sequenceInputLayer(10,'Name','Input_Layer')
     
-    fullyConnectedLayer(200)
-    reluLayer()
+    fullyConnectedLayer(200,'Name','FC_11')
+    reluLayer('Name','relu_11')
 
 %     dropoutLayer(0.1)
 
-    fullyConnectedLayer(100)
-    reluLayer()
+    fullyConnectedLayer(200,'Name','FC_12')
+    reluLayer('Name','relu_12')
+    
+    fullyConnectedLayer(200,'Name','FC_13')
+    reluLayer('Name','relu_13')
+    
+%     additionLayer(2,'Name','add11')
+
+    fullyConnectedLayer(200,'Name','FC_2')
+    reluLayer('Name','relu_2')
     
 %     dropoutLayer(0.1)
-    
-    fullyConnectedLayer(200)
-    reluLayer()
-    
-%     dropoutLayer(0.1)
-    
-    fullyConnectedLayer(num_responses)
-    regressionLayer];
+
+    fullyConnectedLayer(num_responses,'Name','FC_3')
+    regressionLayer('Name','Output_layer')];
 
 
 options = trainingOptions('adam', ...
@@ -128,8 +113,8 @@ options = trainingOptions('adam', ...
     'MiniBatchSize',mini_batch, ...
     'LearnRateSchedule','piecewise',...
     'InitialLearnRate',0.02, ...
-    'LearnRateDropPeriod',10,...
-    'LearnRateDropFactor',0.8,...
+    'LearnRateDropPeriod',5,...
+    'LearnRateDropFactor',0.7,...
     'Shuffle','every-epoch', ...
     'ValidationData',{Xtest,Ytest}, ...
     'ValidationFrequency',validation_freq, ...
@@ -138,8 +123,10 @@ options = trainingOptions('adam', ...
     'Verbose',1);
 
 
+disp('Model created')
 %%                             TRAIN MODEL
 disp("Start training ... ")
+
 
 [model,trainer] = trainNetwork(Xtrain,Ytrain,layers,options);   % continue training
 % net = train(net,Xtrain,Ytrain);

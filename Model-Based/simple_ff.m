@@ -1,3 +1,4 @@
+
 clear
 %%                                Load Data
 root = pwd;
@@ -10,6 +11,14 @@ load(file_out);
 [m, features,T] = size(IN);           % number of samples
 dt = 0.03;
 t = 1:1:T;
+
+for i=1:1:m
+    X(:,i) = (IN{i});
+    Y(:,i) = (OUT{i});
+end
+
+
+
 %%                        Split Train/Test
 
 p = 0.9; % ratio between training batch size and testing size
@@ -17,13 +26,15 @@ idx = randperm(m);
 noise_value = 0.0;   % add noise for training
 
 % Switch to cell arrays for later
-Xtrain = IN(idx(1:round(p*m)),:,:,:);
-Xtest  = IN(idx(round(p*m)+1:end),:,:,:);
+Xtrain = X(:,idx(1:round(p*m)));
+Xtest  = X(:,idx(round(p*m)+1:end));
 
 
 
-Ytrain = OUT(idx(1:round(p*m)),:,:,:);
-Ytest  = OUT(idx(round(p*m)+1:end),:,:,:);
+Ytrain = Y(:,idx(1:round(p*m)));
+Ytest  = Y(:,idx(round(p*m)+1:end));
+
+
 
 
 disp("Loaded & correct shape")
@@ -65,7 +76,7 @@ for i = 1:numel(Xtest)
     Xtest{i} = (Xtest{i} - mu) ./ sig;
 end
 
-%%     Save Mu & Sigma
+%%                          Save Mu & Sigma
 filename = strcat(root,'\Model-Based\mu_sig.mat');
 mu_sig = {mu, sig};
 save(filename,'mu_sig');
@@ -86,78 +97,60 @@ save(filename,'mu_sig');
 % end
 
 %%                             BUILD MODEL
-max_epochs = 100;
-mini_batch = 2*256;
 
-input_size = 6;
-num_responses = size(Ytrain{1},1);
+max_epochs = 20;
+mini_batch = 256;
 
+input_size = 10;
+num_responses = size(2);
 
-validation_freq = 200;
+numLayers = 3;
+numINputs = 10;
 
-
-
-
- % Feedforward deep:  
-layers = [ ... 
-    sequenceInputLayer(input_size)
-    
-    fullyConnectedLayer(200)
-    reluLayer()
-
-%     dropoutLayer(0.1)
-
-    fullyConnectedLayer(100)
-    reluLayer()
-    
-%     dropoutLayer(0.1)
-    
-    fullyConnectedLayer(200)
-    reluLayer()
-    
-%     dropoutLayer(0.1)
-    
-    fullyConnectedLayer(num_responses)
-    regressionLayer];
+net          = cascadeforwardnet(numInputs,numLayers);
+net.numInputs = length(Xtrain);
 
 
-options = trainingOptions('adam', ...
-    'Epsilon',10^(-8),...
-    'L2Regularization',0.05,...
-    'MaxEpochs',max_epochs, ...
-    'MiniBatchSize',mini_batch, ...
-    'LearnRateSchedule','piecewise',...
-    'InitialLearnRate',0.02, ...
-    'LearnRateDropPeriod',10,...
-    'LearnRateDropFactor',0.8,...
-    'Shuffle','every-epoch', ...
-    'ValidationData',{Xtest,Ytest}, ...
-    'ValidationFrequency',validation_freq, ...
-    'ExecutionEnvironment', 'gpu', ...
-    'Plots','training-progress',...
-    'Verbose',1);
-
-
-%%                             TRAIN MODEL
+%%                               TRAIN MODEL
 disp("Start training ... ")
 
-[model,trainer] = trainNetwork(Xtrain,Ytrain,layers,options);   % continue training
-% net = train(net,Xtrain,Ytrain);
+net = network(10,2,[1;0],[1; 0],[0 0; 1 0],[0 1]);
+net.layers{1}.transferFcn = 'tansig';
+net.layers{2}.transferFcn = 'logsig';
+
+view(net)
+
+
 
 
 disp("Model is trained")
 %%                              TEST MODEL
 
-Ypred = predict(model,Xtest,'MiniBatchSize',1);
+y_pred = net(x);
+perf = perform(net,y,Ytest)
 
-
- %%                           VERIFICATION
+ %%
 t = 1:1:T;
 % Plot a result:
 i = randi(round((1-p)*m));
 
-Xtest{i}(1),Ytest{i}(1),Ypred{i}(1)
 
+figure('Name','Motor 2')
+hold on
+% plot(Xtrain{i}(1,:,1,1), Ytrain{i}(1,:,1,1))  % tau1 against theta curr 1
+plot(t, Ypred{i}(2,:)) % tau-1 against theta curr 1
+plot(t, Ytest{i}(2,:)) % tau-1 against theta curr
+legend('Predictions','Test data')
+hold off
+
+
+figure('Name','Motor 1')
+hold on
+% plot(Xtrain{i}(1,:,1,1), Ytrain{i}(1,:,1,1))  % tau1 against theta curr 1
+plot(t, Ypred{i}(1,:)) % tau-1 against theta curr 1
+plot(t, Ytest{i}(1,:)) % tau-1 against theta curr
+legend('Predictions','Test data')
+hold off
 
 %%                              ERROR METRICS
 
@@ -171,11 +164,10 @@ hold off;
 
 %%                               SAVE MODEL
 
-filename = strcat(root,'\Model-Based\model_trainer_v2.mat');
+filename = strcat(root,'\Model-Based\model_trainer.mat');
 model_trainer = {model, trainer};
 save(filename,'model_trainer');
 
 
 disp("Model is saved to root directory")
 %% %%%%%
-disp("Done!")

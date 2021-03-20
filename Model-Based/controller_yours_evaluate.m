@@ -32,11 +32,14 @@ Kd = [50; 50];
 
 
 %% My code:
-your_parameters = {des,t,tau_pred};
-loaded_model = load('model_trainer.mat');
-net = loaded_model.model_trainer{1};
+loaded_model = load('model_trainer_v2.mat');
 
-features = 6;
+
+net = loaded_model.model_trainer{1};
+% mu = load_mu_sig.mu_sig{1};
+% sig = load_mu_sig.mu_sig{2};
+
+your_parameters = {net};
 
 
 %% SIMULATE ROBOT
@@ -46,7 +49,8 @@ for iter = 1:length(rot_vel)
     % Calculate desired trajectory in task space and in joint space
     des = calculate_trajectory(t, tp, rp);
 
-    th_0 = des.th(:,1) - [0.1; 0.2];
+%     th_0 = des.th(:,1) - [0.1; 0.2];
+    th_0 = des.th(:,1) - [-0.5236; -0.5236];
     th_d_0 = des.th_d(:,1);
     
     

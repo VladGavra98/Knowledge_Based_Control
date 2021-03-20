@@ -29,7 +29,7 @@ function curr = simulate_robot(t, dt, th_0, th_d_0, des, rp, ctr_ff, ctr_fb)
         
         %% Simulation Update, symplectic Euler integration
         th_d_new = th_d_curr + dt*th_dd_new;
-        th_new = th_curr + dt*th_d_new;
+        th_new = th_curr + dt*th_d_new + 0.00*rand();      % NOISE added here!!!!
 
         %% write to structs
         curr.th(:,iter) = th_new; curr.th_d(:,iter) = th_d_new; curr.th_dd(:,iter) = th_dd_new;

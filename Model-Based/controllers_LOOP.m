@@ -5,7 +5,7 @@ close all
 clear;
 
 %% Initialise sim parameters
-m = 1*334;
+m = 5000*334;
 
 
 rp = define_robot_parameters();
@@ -40,8 +40,8 @@ Kd = [50; 50];
 IN  = {};
 OUT = {};
 
-w1 = 65;
-w2 = 85;
+w1 = 69.0;
+w2 = 81.0;
 
 x01 = 0.4;
 x02 = 0.4;
@@ -56,6 +56,7 @@ rey2 = 1.26;
 ell_an1 = 44;
 ell_an2 = 46;   
 
+
 %% CREATE MORE OF THESE 'BIG' MATRICES AND CONCATENATE THEM IN A LOOP
 
 maux = 1;
@@ -64,7 +65,7 @@ for B = 1:floor(m/length(t)) % number of simulations
     % DESIRED TRAJECTORY DATA
     ranw = w1 + rand()*(w2-w1);
     tp.w = ranw*d2r;            % rotational velocity rad/s
-    %tp.w = 72*d2r;            % rotational velocity rad/s
+    %tp.w = 72*d2r;             % rotational velocity rad/s
 
     %Randomize radii
     tp.rx = rex1 +rand()*(rex2-rex1);
@@ -81,13 +82,16 @@ for B = 1:floor(m/length(t)) % number of simulations
     tp.y0 = y01 + rand()*(y02-y01);  % center of ellipse  
     %tp.x0 = 0.4;  tp.y0 = 0.4;  % center of ellipse  
 
+    
+    %randomize initial deviation:
+    angle_deviation = (rand(2,1)*2 -1) .* [32*pi/180 ; 32*pi/180];
+
     % Calculate desired trajectory in task space and in joint space
     des = calculate_trajectory(t, tp, rp);
-    th_0 = des.th(:,1) - [0.1; 0.2];
+    th_0 = des.th(:,1) - angle_deviation;
     th_d_0 = des.th_d(:,1);
 
-    
-    
+
     % Simualte robot trajectory:
     curr = simulate_robot(t, dt, th_0, th_d_0, des, rp, ...
         @(th_curr, th_d_curr, th_des, th_d_des, th_dd_des) ff_dyn_model_2(th_curr, th_d_curr, th_des, th_d_des, th_dd_des, rp), ...
@@ -95,46 +99,46 @@ for B = 1:floor(m/length(t)) % number of simulations
        
    
        % Add sample to data
-        curr_x      = curr.x; %vector of x's: odd is first joint, even is second
+        curr_x      = curr.x; % vector of x's: odd is first joint, even is second
         curr_x_d    = curr.x_d;
         curr_x_dd   = curr.x_dd;
         curr_x_eb   = curr.x_eb;
-        curr_th    = curr.th;
+        curr_th     = wrap(curr.th);   % wrap the angle to [0,2pi]
         curr_th_d  = curr.th_d;
         curr_th_dd  = curr.th_dd;
         curr_tau_ff = curr.tau_ff;
         curr_tau_fb = curr.tau_fb;
 
-        des_x      = des.x; %vector of x's: odd is first joint, even is second
+        des_x      = des.x;   % vector of x's: odd is first joint, even is second
         des_x_d    = des.x_d;
         des_x_dd   = des.x_dd;
-        des_th    = des.th;
+        des_th    =  wrap(des.th);    % wrap the angle to [0,2pi]
         des_th_d   = des.th_d;
         des_th_dd  = des.th_dd;
     
        
     for i = 1:length(t)
         
-        %create a 2x334 matrix for each state (feature)
-        curr_xs    = [curr_x(i),curr_x(i+1)];     %should yield the same as curr.x
-        curr_x_ds  = [curr_x_d(i),curr_x_d(i+1)];
-        curr_x_dds = [curr_x_dd(i),curr_x_dd(i+1)];
-        curr_x_ebs = [curr_x_eb(i),curr_x_eb(i+1)];
-        curr_ths = [curr_th(i),curr_th(i+1)];
-        curr_th_ds = [curr_th_d(i),curr_th_d(i+1)];
-        curr_th_dds = [curr_th_dd(i),curr_th_dd(i+1)];
-        curr_tau_ffs = [curr_tau_ff(i),curr_tau_ff(i+1)];
-        curr_tau_fbs = [curr_tau_fb(i),curr_tau_fb(i+1)];
+        %state_s has both motor values in it
+        curr_xs    = [curr_x(1,i),curr_x(2,i)];     
+        curr_x_ds  = [curr_x_d(1,i),curr_x_d(2,i)];
+        curr_x_dds = [curr_x_dd(1,i),curr_x_dd(2,i)];
+        curr_x_ebs = [curr_x_eb(1,i),curr_x_eb(2,i)];
+        curr_ths = [curr_th(1,i),curr_th(2,i)];
+        curr_th_ds = [curr_th_d(1,i),curr_th_d(2,i)];
+        curr_th_dds = [curr_th_dd(1,i),curr_th_dd(2,i)];
+        curr_tau_ffs = [curr_tau_ff(1,i),curr_tau_ff(2,i)];
+        curr_tau_fbs = [curr_tau_fb(1,i),curr_tau_fb(2,i)];
 
 
-        des_xs       = [des_x(i),des_x(i+1)];     %should yield the same as des.x
-        des_x_ds     = [des_x_d(i),des_x_d(i+1)];
-        des_x_dds    = [des_x_dd(i),des_x_dd(i+1)];
-        des_ths      = [des_th(i),des_th(i+1)];
-        des_th_ds    = [des_th_d(i),des_th_d(i+1)];
-        des_th_dds   = [des_th_dd(i),des_th_dd(i+1)];
+        des_xs       = [des_x(1,i),des_x(2,i)];     %should yield the same as des.x
+        des_x_ds     = [des_x_d(1,i),des_x_d(2,i)];
+        des_x_dds    = [des_x_dd(1,i),des_x_dd(2,i)];
+        des_ths      = [des_th(1,i),des_th(2,i)];
+        des_th_ds    = [des_th_d(1,i),des_th_d(2,i)];
+        des_th_dds   = [des_th_dd(1,i),des_th_dd(2,i)];
 
-        IN_NEW = horzcat(curr_ths,curr_th_ds, des_ths, des_th_ds, des_th_dds);
+        IN_NEW  = horzcat(curr_ths,curr_th_ds,des_ths, des_th_ds, des_th_dds);
         OUT_NEW = curr_tau_ffs;
 
         % Update the data set
@@ -154,8 +158,14 @@ end
 
 %%  Next: stack all together in the 3th dimension
 
-% IN  = reshape(IN,  [m,10]);
-% OUT = reshape(OUT, [m,10]);
+for i=1:1:m
+    IN{i} =  reshape(IN{i},  [10,1]);
+end
+
+for i=1:1:m
+    OUT{i} =  reshape(OUT{i},  [2,1]);
+end
+
 
 %%
 save('C:\Users\vladg\OneDrive\Documents\Master\Q3_SC42050_Knowledge_based_Control\GitHub_practical\KBC_practical\Model-Based\IN.mat', 'IN')
