@@ -10,9 +10,10 @@
 % 
 %     animate_swingup(ta, xa, par)
 % end
+clear all;
 seed = 5;
 rng(seed);
-clear all;
+
 
 par = robot_set_parameters;
 par.run_type = 'learn';

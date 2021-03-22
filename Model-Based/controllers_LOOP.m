@@ -94,7 +94,7 @@ for B = 1:floor(m/length(t)) % number of simulations
 
     % Simualte robot trajectory:
     curr = simulate_robot(t, dt, th_0, th_d_0, des, rp, ...
-        @(th_curr, th_d_curr, th_des, th_d_des, th_dd_des) ff_dyn_model_2(th_curr, th_d_curr, th_des, th_d_des, th_dd_des, rp), ...
+        @(th_curr, th_d_curr, th_des, th_d_des, th_dd_des) ff_dyn_model_1(th_curr, th_d_curr, th_des, th_d_des, th_dd_des, rp), ...
         @(th_curr, th_d_curr, th_des, th_d_des) fb_pd(th_curr, th_d_curr, th_des, th_d_des, Kp, Kd));
        
    
@@ -138,7 +138,7 @@ for B = 1:floor(m/length(t)) % number of simulations
         des_th_ds    = [des_th_d(1,i),des_th_d(2,i)];
         des_th_dds   = [des_th_dd(1,i),des_th_dd(2,i)];
 
-        IN_NEW  = horzcat(curr_ths,curr_th_ds,des_ths, des_th_ds, des_th_dds);
+        IN_NEW  = horzcat(curr_ths,curr_th_ds);
         OUT_NEW = curr_tau_ffs;
 
         % Update the data set
@@ -158,8 +158,9 @@ end
 
 %%  Next: stack all together in the 3th dimension
 
+features = size(IN_NEW);
 for i=1:1:m
-    IN{i} =  reshape(IN{i},  [10,1]);
+    IN{i} =  reshape(IN{i},  [features(2),1]);
 end
 
 for i=1:1:m

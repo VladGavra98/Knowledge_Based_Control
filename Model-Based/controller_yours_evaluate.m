@@ -32,14 +32,17 @@ Kd = [50; 50];
 
 
 %% My code:
+% Load the 2 models
+loaded_model = load('model_trainer.mat');
+net_des = loaded_model.model_trainer{1};
+
 loaded_model = load('model_trainer_v2.mat');
-
-
-net = loaded_model.model_trainer{1};
+net_curr = loaded_model.model_trainer{1};
 % mu = load_mu_sig.mu_sig{1};
 % sig = load_mu_sig.mu_sig{2};
 
-your_parameters = {net};
+your_parameters = {net_des,net_curr};
+
 
 
 %% SIMULATE ROBOT
@@ -49,12 +52,13 @@ for iter = 1:length(rot_vel)
     % Calculate desired trajectory in task space and in joint space
     des = calculate_trajectory(t, tp, rp);
 
+       % Initial condition:
 %     th_0 = des.th(:,1) - [0.1; 0.2];
-    th_0 = des.th(:,1) - [-0.5236; -0.5236];
+    angle0 = [20;-20] .* pi/180;
+    th_0 = des.th(:,1) - angle0;
     th_d_0 = des.th_d(:,1);
     
     
-
     %% SIMULATE ROBOT
     curr = simulate_robot(t, dt, th_0, th_d_0, des, rp, ...
         @(th_curr, th_d_curr, th_des, th_d_des, th_dd_des) ff_yours(th_curr, th_d_curr, th_des, th_d_des, th_dd_des, your_parameters), ...
@@ -79,7 +83,7 @@ ylabel('RMSE th');
 legend('yours','PD','DYN1','DYN2');
 xlabel('rot vel');
 
-fprintf('mean RMSE x\n');
+fprintf('\n\n\n Mean RMSE x\n');
 fprintf('yours %f\n', mean(RMSE_yours.x));
 fprintf('PD %f\n', mean(RMSE_PD.x));
 fprintf('DYN1 %f\n', mean(RMSE_DYN1.x));

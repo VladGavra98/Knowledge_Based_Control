@@ -25,6 +25,7 @@ function plot_Q(Q, par, ra, tta, ii)
     subaxis(2, 2, 3);
     plot(1:ii, movavg(ra(1:ii), 9));
     set(gca, 'xlim', [0 par.trials]);
+    axis tight
     title('Progress');
     xlabel('Trial');
     ylabel('Average cumulative reward');
@@ -33,6 +34,7 @@ function plot_Q(Q, par, ra, tta, ii)
     subaxis(2, 2, 4);
     plot(movavg(tta(1:ii), 9));
     set(gca, 'xlim', [0 par.trials]);
+    axis tight
     title('Progress');
     xlabel('Trial');
     ylabel('Average trial duration');

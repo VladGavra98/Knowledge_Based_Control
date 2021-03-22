@@ -1,6 +1,6 @@
 function [par, ta, xa] = swingup(par)
 
-    par.simtime = 20;     % Trial length
+    par.simtime = 10;     % Trial length
     par.simstep = 0.05;   % Simulation time step
     par.maxtorque = 1.5;  % Maximum applicable torque
     
@@ -12,7 +12,7 @@ function [par, ta, xa] = swingup(par)
         
 		% TODO: Initialize the outer loop
         Q = init_Q(par);
-        reward =0;
+        reward = 0;
         
         % Initialize book-keeping (for plotting only)
         ra  = zeros(par.trials, 1);
@@ -146,9 +146,9 @@ end
 
 function par = get_parameters(par)
     % TODO: set the values
-    par.epsilon = 0.2;        % Random action rate      CHANGED FROM 0
-    par.epsilon0 = 0.2;       %For plotting only!!
-    par.gamma = 1;       % Discount rate
+    par.epsilon = 0.3;        % Random action rate      CHANGED FROM 0
+    par.epsilon0 = 0.0;       %For plotting only!!
+    par.gamma = 0.99;       % Discount rate
     par.alpha = 0.25;          % Learning rate           CHANGED FROM 0
     par.pos_states = 31;     % Position discretization   CHANGED FROM 0
     par.vel_states = 31;     % Velocity discretization   CHANGED FROM 0

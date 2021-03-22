@@ -30,16 +30,25 @@ tp.y0 = 0.2;  % center of ellipse
 % Calculate desired trajectory in task space and in joint space
 des = calculate_trajectory(t, tp, rp);
 
-th_0 = des.th(:,1) - [0.1; 0.2];
+% th_0 = des.th(:,1) - [0.1; 0.2];
+angle0 = [0.215;0.165];
+th_0 = des.th(:,1) + angle0;
 th_d_0 = des.th_d(:,1);
 
 % SIMULATE ROBOT
 Kp = [500; 500];
 Kd = [50; 50];
 
-curr = simulate_robot(t, dt, th_0, th_d_0, des, rp, ...
+curr1 = simulate_robot(t, dt, th_0, th_d_0, des, rp, ...
     @(th_curr, th_d_curr, th_des, th_d_des, th_dd_des) ff_dyn_model_1(th_curr, th_d_curr, th_des, th_d_des, th_dd_des, rp), ...
     @(th_curr, th_d_curr, th_des, th_d_des) fb_pd(th_curr, th_d_curr, th_des, th_d_des, Kp, Kd));
 
+curr2 = simulate_robot(t, dt, th_0, th_d_0, des, rp, ...
+    @(th_curr, th_d_curr, th_des, th_d_des, th_dd_des) ff_dyn_model_2(th_curr, th_d_curr, th_des, th_d_des, th_dd_des, rp), ...
+    @(th_curr, th_d_curr, th_des, th_d_des) fb_pd(th_curr, th_d_curr, th_des, th_d_des, Kp, Kd));
+
+analyze_performance(t, curr1, des);
+analyze_performance(t, curr2, des);
+
+%% Draw:
 robot_animation(t, curr, des);
-analyze_performance(t, curr, des);

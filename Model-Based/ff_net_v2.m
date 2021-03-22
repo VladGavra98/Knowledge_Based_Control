@@ -72,17 +72,17 @@ disp("Loaded & correct shape")
 
 %%                             BUILD MODEL
 max_epochs = 100;
-mini_batch = 8*256;
+mini_batch = 256;
 
 input_size = 10;
 num_responses = size(Ytrain{1},1);
 
-validation_freq = 1000;
+validation_freq = mini_batch*2;
 
  % Feedforward deep:  
 layers = [ ... 
 %     imageInputLayer([1 1 features],'Name','Input_layer')
-    sequenceInputLayer(10,'Name','Input_Layer')
+    sequenceInputLayer(features,'Name','Input_Layer')
     
     fullyConnectedLayer(200,'Name','FC_11')
     reluLayer('Name','relu_11')
