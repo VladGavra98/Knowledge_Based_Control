@@ -1,8 +1,8 @@
 clear
 %%                                Load Data
 root = pwd;
-file_in  = strcat(root,'\Model-Based\IN.mat');
-file_out = strcat(root,'\Model-Based\OUT.mat');
+file_in  = strcat(root,'\Model-Based\IN_C2.mat');
+file_out = strcat(root,'\Model-Based\OUT_C2.mat');
 
 load(file_in);
 load(file_out);
@@ -34,17 +34,7 @@ Ytrain = OUT(idx(1:round(p*m)),:,:,:);
 Ytest  = OUT(idx(round(p*m)+1:end),:,:,:);
 
 
-% xtrain = cell2mat(Xtrain);
-% xtrain = permute(xtrain,[2,3,4,1]);
-% 
-% xtest = cell2mat(Xtest);
-% xtest = permute(xtest,[2,3,4,1]);
-% 
-% ytrain = cell2mat(Ytrain);
-% ytrain = permute(ytrain,[2,1]);
-% 
-% ytest = cell2mat(Ytest);
-% ytest = permute(ytest,[2,1]);
+
 
 disp("Loaded & correct shape")
 
@@ -71,13 +61,13 @@ disp("Loaded & correct shape")
 
 
 %%                             BUILD MODEL
-max_epochs = 100;
-mini_batch = 256;
+max_epochs = 80;
+mini_batch = 8*256;
 
-input_size = 10;
+
 num_responses = size(Ytrain{1},1);
 
-validation_freq = mini_batch*2;
+validation_freq = 1000;
 
  % Feedforward deep:  
 layers = [ ... 
@@ -87,20 +77,20 @@ layers = [ ...
     fullyConnectedLayer(200,'Name','FC_11')
     reluLayer('Name','relu_11')
 
-%     dropoutLayer(0.1)
+
 
     fullyConnectedLayer(200,'Name','FC_12')
     reluLayer('Name','relu_12')
     
-    fullyConnectedLayer(200,'Name','FC_13')
+    fullyConnectedLayer(100,'Name','FC_13')
     reluLayer('Name','relu_13')
     
-%     additionLayer(2,'Name','add11')
+    
 
     fullyConnectedLayer(200,'Name','FC_2')
     reluLayer('Name','relu_2')
     
-%     dropoutLayer(0.1)
+    dropoutLayer(0.1)
 
     fullyConnectedLayer(num_responses,'Name','FC_3')
     regressionLayer('Name','Output_layer')];
@@ -114,11 +104,12 @@ options = trainingOptions('adam', ...
     'LearnRateSchedule','piecewise',...
     'InitialLearnRate',0.02, ...
     'LearnRateDropPeriod',5,...
-    'LearnRateDropFactor',0.7,...
+    'LearnRateDropFactor',0.8,...
     'Shuffle','every-epoch', ...
     'ValidationData',{Xtest,Ytest}, ...
     'ValidationFrequency',validation_freq, ...
     'ExecutionEnvironment', 'gpu', ...
+    'Shuffle', 'every-epoch',...
     'Plots','training-progress',...
     'Verbose',1);
 
@@ -135,7 +126,7 @@ disp("Start training ... ")
 disp("Model is trained")
 %%                              TEST MODEL
 
-Ypred = predict(model,Xtest,'MiniBatchSize',1);
+Ypred = predict(model,Xtest,'MiniBatchSize',1000);
 
 
  %%                           VERIFICATION
@@ -158,7 +149,7 @@ hold off;
 
 %%                               SAVE MODEL
 
-filename = strcat(root,'\Model-Based\model_trainer_v2.mat');
+filename = strcat(root,'\Model-Based\model_trainer_C3.mat');   % C1 = cluster 1
 model_trainer = {model, trainer};
 save(filename,'model_trainer');
 
